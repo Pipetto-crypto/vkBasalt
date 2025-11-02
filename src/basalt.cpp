@@ -543,24 +543,8 @@ namespace vkBasalt
     VKAPI_ATTR VkResult VKAPI_CALL vkBasalt_QueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo)
     {
         scoped_lock l(globalLock);
-
-        static uint32_t keySymbol = convertToKeySym(pConfig->getOption<std::string>("toggleKey", "Home"));
-
-        static bool pressed       = false;
+        
         static bool presentEffect = pConfig->getOption<bool>("enableOnLaunch", true);
-
-        if (isKeyPressed(keySymbol))
-        {
-            if (!pressed)
-            {
-                presentEffect = !presentEffect;
-                pressed       = true;
-            }
-        }
-        else
-        {
-            pressed = false;
-        }
 
         LogicalDevice* pLogicalDevice = deviceMap[GetKey(queue)].get();
 
