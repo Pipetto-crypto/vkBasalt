@@ -21,6 +21,10 @@ namespace vkBasalt
         std::string userXdgConfigFile = tmpConfigEnv ? std::string(tmpConfigEnv) + "/vkBasalt/vkBasalt.conf"
                                                      : std::string(std::getenv("HOME")) + "/.config/vkBasalt/vkBasalt.conf";
 
+        // Custom config string
+        const char* tmpConfStringEnv   = std::getenv("VKBASALT_CONFIG");
+        std::string customConfigString = tmpConfStringEnv ? std::string(tmpConfStringEnv) : "";
+
         // Allowed config paths
         const std::array<std::string, 7> configPath = {
             customConfigFile,                                    // custom config (VKBASALT_CONFIG_FILE=/path/to/vkBasalt.conf)
@@ -32,18 +36,29 @@ namespace vkBasalt
             std::string(DATADIR) + "/vkBasalt/vkBasalt.conf",    // legacy system-wide config
         };
 
+        auto hasConfigFile = false;
+
         for (const auto& cFile : configPath)
         {
             std::ifstream configFile(cFile);
             if (!configFile.good())
                 continue;
 
+            hasConfigFile = true;
+
             Logger::info("config file: " + cFile);
             readConfigFile(configFile);
-            return;
+            break;
         }
 
-        Logger::err("no good config file");
+        if (!hasConfigFile)
+           Logger::err("no good config file");
+
+        if (!customConfigString.empty())
+        {
+            Logger::info("config string: " + customConfigString);
+            readConfigFromEnv(customConfigString);
+        }
     }
 
     Config::Config(const Config& other)
@@ -58,6 +73,17 @@ namespace vkBasalt
         while (std::getline(stream, line))
         {
             readConfigLine(line);
+        }
+    }
+
+    void Config::readConfigFromEnv(std::string configLine)
+    {
+        std::string line;
+        std::stringstream stream(configLine);
+    
+        while (std::getline(stream, line, ';'))
+        {
+           readConfigLine(line);
         }
     }
 
