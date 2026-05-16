@@ -53,6 +53,7 @@
     FORVKFUNC(DestroySemaphore) \
     FORVKFUNC(DestroyShaderModule) \
     FORVKFUNC(DestroySwapchainKHR) \
+    FORVKFUNC(DeviceWaitIdle) \
     FORVKFUNC(EndCommandBuffer) \
     FORVKFUNC(FreeCommandBuffers) \
     FORVKFUNC(FreeMemory) \
