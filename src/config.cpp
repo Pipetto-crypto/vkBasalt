@@ -6,6 +6,8 @@
 
 namespace vkBasalt
 {
+    std::array<std::string, 7> configPath;
+    
     Config::Config()
     {
         // Custom config file path
@@ -26,7 +28,7 @@ namespace vkBasalt
         std::string customConfigString = tmpConfStringEnv ? std::string(tmpConfStringEnv) : "";
 
         // Allowed config paths
-        const std::array<std::string, 7> configPath = {
+        configPath = {
             customConfigFile,                                    // custom config (VKBASALT_CONFIG_FILE=/path/to/vkBasalt.conf)
             "vkBasalt.conf",                                     // per game config
             userXdgConfigFile,                                   // user-global config
@@ -59,6 +61,8 @@ namespace vkBasalt
             Logger::info("config string: " + customConfigString);
             readConfigFromEnv(customConfigString);
         }
+
+        Config::printOptions();
     }
 
     Config::Config(const Config& other)
@@ -127,7 +131,6 @@ namespace vkBasalt
 
         if (!key.empty() && !value.empty())
         {
-            Logger::info(key + " = " + value);
             options[key] = value;
         }
     }
@@ -215,6 +218,30 @@ namespace vkBasalt
             {
                 result.push_back(newString);
             }
+        }
+    }
+
+    void Config::reload() {
+        auto hasConfigFile = false;
+
+        options.clear();
+        
+        for (const auto& cFile : configPath)
+        {
+            std::ifstream configFile(cFile);                                                        
+            if (!configFile.good())                                                                     
+                continue;  
+                                                                           
+            hasConfigFile = true;                                           
+            readConfigFile(configFile);                                                         
+            break;
+        }
+
+        if (!hasConfigFile) {
+            const char* tmpConfStringEnv   = std::getenv("VKBASALT_CONFIG");
+            std::string customConfigString = tmpConfStringEnv ? std::string(tmpConfStringEnv) : "";
+            if (!customConfigString.empty())
+                readConfigFromEnv(customConfigString);
         }
     }
 } // namespace vkBasalt

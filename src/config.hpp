@@ -26,6 +26,19 @@ namespace vkBasalt
             return result;
         }
 
+        std::unordered_map<std::string, std::string> getOptions()
+        {
+            return options;
+        }
+
+        void printOptions() {
+            for (auto it = options.begin(); it != options.end(); it++) {
+                Logger::info(it->first + " = " + it->second);
+            }
+        }
+
+        void reload();
+
     private:
         std::unordered_map<std::string, std::string> options;
 
@@ -38,6 +51,7 @@ namespace vkBasalt
         void parseOption(const std::string& option, bool& result);
         void parseOption(const std::string& option, std::string& result);
         void parseOption(const std::string& option, std::vector<std::string>& result);
+
     };
 } // namespace vkBasalt
 
