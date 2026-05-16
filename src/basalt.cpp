@@ -71,7 +71,7 @@ namespace vkBasalt
     void* GetKey(DispatchableType inst)
     {
         return *(void**) inst;
-    }
+    }   
 
     VkResult VKAPI_CALL vkBasalt_CreateInstance(const VkInstanceCreateInfo*  pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator,
@@ -373,6 +373,7 @@ namespace vkBasalt
                                                                   VkImage*       pSwapchainImages)
     {
         scoped_lock l(globalLock);
+
         Logger::trace("vkGetSwapchainImagesKHR " + std::to_string(*pCount));
 
         LogicalDevice* pLogicalDevice = deviceMap[GetKey(device)].get();
@@ -383,7 +384,7 @@ namespace vkBasalt
         }
 
         LogicalSwapchain* pLogicalSwapchain = swapchainMap[swapchain].get();
-
+        
         // If the images got already requested once, return them again instead of creating new images
         if (pLogicalSwapchain->fakeImages.size())
         {
@@ -391,7 +392,7 @@ namespace vkBasalt
             std::memcpy(pSwapchainImages, pLogicalSwapchain->fakeImages.data(), sizeof(VkImage) * (*pCount));
             return *pCount < pLogicalSwapchain->imageCount ? VK_INCOMPLETE : VK_SUCCESS;
         }
-
+       
         pLogicalDevice->vkd.GetSwapchainImagesKHR(device, swapchain, &pLogicalSwapchain->imageCount, nullptr);
         pLogicalSwapchain->images.resize(pLogicalSwapchain->imageCount);
         pLogicalDevice->vkd.GetSwapchainImagesKHR(device, swapchain, &pLogicalSwapchain->imageCount, pLogicalSwapchain->images.data());
@@ -544,7 +545,7 @@ namespace vkBasalt
     {
         scoped_lock l(globalLock);
         
-        static bool presentEffect = pConfig->getOption<bool>("enableOnLaunch", true);
+        bool presentEffect = pConfig->getOption<bool>("enabled", true);
 
         LogicalDevice* pLogicalDevice = deviceMap[GetKey(queue)].get();
 
@@ -590,7 +591,20 @@ namespace vkBasalt
         presentInfo.waitSemaphoreCount = presentSemaphores.size();
         presentInfo.pWaitSemaphores    = presentSemaphores.data();
 
-        return pLogicalDevice->vkd.QueuePresentKHR(queue, &presentInfo);
+        VkResult res = pLogicalDevice->vkd.QueuePresentKHR(queue, &presentInfo);
+
+        auto oldOptions = vkBasalt::pConfig->getOptions();
+        vkBasalt::pConfig->reload();
+        auto newOptions = vkBasalt::pConfig->getOptions();
+
+        if (oldOptions != newOptions) {
+            Logger::info("Config changed, recreating swapchain");
+            vkBasalt::pConfig->printOptions();
+            pLogicalDevice->vkd.DeviceWaitIdle(pLogicalDevice->device);
+            return VK_ERROR_OUT_OF_DATE_KHR;
+        }
+      
+        return res;
     }
 
     VKAPI_ATTR void VKAPI_CALL vkBasalt_DestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks* pAllocator)
